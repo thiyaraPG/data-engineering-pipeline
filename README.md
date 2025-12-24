@@ -146,9 +146,6 @@ All BigQuery DDL and MERGE SQL is committed under `/ddl`.
 
 ## Running the Pipeline
 
-### Setupset DRY_RUN=true   # Windows
-python -m pipeline.run_pipeline
-
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
