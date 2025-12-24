@@ -9,7 +9,7 @@ The pipeline is safe to run multiple times, emits structured logs, and produces 
 
 ---
 ## Project Structure
-scripts/        # Provided generators (unchanged)
+scripts/        # Provided generators
 pipeline/       # Orchestration, validation, logging
 ddl/            # BigQuery schema & MERGE SQL
 data/           # FX rates
