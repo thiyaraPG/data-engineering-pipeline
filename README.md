@@ -9,12 +9,15 @@ The pipeline is safe to run multiple times, emits structured logs, and produces 
 
 ---
 ## Project Structure
-scripts/        # Provided generators
-pipeline/       # Orchestration, validation, logging
-ddl/            # BigQuery schema & MERGE SQL
-data/           # FX rates
-reports/        # Summary report
-requirements.txt
+Exercise/
+├── scripts/          # Provided dataset generators
+├── pipeline/         # Orchestration, validation, transformation
+├── ddl/              # BigQuery DDL and MERGE SQL
+├── data/             # Reference data (FX rates)
+├── reports/          # Pipeline summary output
+│
+├── *.csv              # Generated datasets
+└── .gitignore
 
 
 ## Provided Datasets
