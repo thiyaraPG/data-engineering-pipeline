@@ -1,0 +1,21 @@
+{
+  "sales": {
+    "rows_read": 3000000,
+    "rows_loaded": 2084673,
+    "rows_rejected": 915327,
+    "usd_min": 0.72,
+    "usd_max": 317397.13
+  },
+  "financial": {
+    "rows_read": 3000000,
+    "rows_loaded": 2083120,
+    "rows_rejected": 916880,
+    "usd_min": 6.81,
+    "usd_max": 126999.89
+  },
+  "attendance": {
+    "rows_read": 3000000,
+    "rows_loaded": 3000000,
+    "rows_rejected": 0
+  }
+}
