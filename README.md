@@ -9,6 +9,8 @@ The pipeline is safe to run multiple times, emits structured logs, and produces 
 
 ---
 ## Project Structure
+
+```text
 Exercise/
 ├── scripts/          # Provided dataset generators
 ├── pipeline/         # Orchestration, validation, transformation
