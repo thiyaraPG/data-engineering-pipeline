@@ -21,6 +21,7 @@ Exercise/
 ├── *.csv              # Generated datasets
 └── .gitignore
 
+```
 
 ## Provided Datasets
 The pipeline orchestrates the following **given scripts**:
@@ -60,6 +61,9 @@ The pipeline orchestrates the following **given scripts**:
 ---
 
 ## Pipeline Flow
+
+
+```text
 Provided Scripts
 ↓
 CSV Outputs
@@ -72,8 +76,7 @@ Summary Report
 ↓
 MERGE → Final Tables (Idempotent)
 
-
----
+```
 
 ## Currency Normalization
 - All monetary fields are automatically detected per dataset.
