@@ -72,8 +72,6 @@ Validation & USD Normalization
 ↓
 Summary Report
 ↓
-(BigQuery Staging Tables)
-↓
 MERGE → Final Tables (Idempotent)
 
 ```
@@ -126,8 +124,7 @@ The report includes:
   - `fact_sales`
   - `fact_financial`
   - `fact_attendance`
-- Staging tables are loaded on each run.
-- Final tables are updated using **MERGE (upsert)** statements.
+- Incoming records are upserted directly into final tables using BigQuery MERGE statements.
 - Natural keys ensure **no duplicate data** on re-runs:
   - `sale_id`
   - `transaction_id`
