@@ -1,6 +1,6 @@
 -- SALES UPSERT
 MERGE `${project}.${dataset}.fact_sales` T
-USING `${project}.${dataset}.stg_sales` S
+USING UNNEST(@sales_rows) S
 ON T.sale_id = S.sale_id
 WHEN MATCHED THEN UPDATE SET
   sale_date = S.sale_date,
@@ -16,7 +16,7 @@ WHEN NOT MATCHED THEN INSERT ROW;
 
 -- FINANCIAL UPSERT
 MERGE `${project}.${dataset}.fact_financial` T
-USING `${project}.${dataset}.stg_financial` S
+USING UNNEST(@financial_rows) S
 ON T.transaction_id = S.transaction_id
 WHEN MATCHED THEN UPDATE SET
   txn_date = S.txn_date,
@@ -32,7 +32,7 @@ WHEN NOT MATCHED THEN INSERT ROW;
 
 -- ATTENDANCE UPSERT
 MERGE `${project}.${dataset}.fact_attendance` T
-USING `${project}.${dataset}.stg_attendance` S
+USING UNNEST(@attendance_rows) S
 ON T.staff_id = S.staff_id AND T.att_date = S.att_date
 WHEN MATCHED THEN UPDATE SET
   region = S.region,

@@ -39,12 +39,3 @@ CREATE TABLE IF NOT EXISTS `${project}.${dataset}.fact_attendance` (
   load_ts TIMESTAMP NOT NULL
 );
 
--- STAGING TABLES (used for idempotent MERGE)
-CREATE TABLE IF NOT EXISTS `${project}.${dataset}.stg_sales`
-AS SELECT * FROM `${project}.${dataset}.fact_sales` WHERE FALSE;
-
-CREATE TABLE IF NOT EXISTS `${project}.${dataset}.stg_financial`
-AS SELECT * FROM `${project}.${dataset}.fact_financial` WHERE FALSE;
-
-CREATE TABLE IF NOT EXISTS `${project}.${dataset}.stg_attendance`
-AS SELECT * FROM `${project}.${dataset}.fact_attendance` WHERE FALSE;

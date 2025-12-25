@@ -5,7 +5,8 @@ import pandas as pd
 import sys
 
 from pipeline.log import log
-from pipeline.bq import apply_sql, load_dataframe
+from pipeline.bq import apply_sql
+
 from pipeline.transform import load_fx_rates, convert_to_usd
 from pipeline.validate import (
     validate_sales,
@@ -101,9 +102,11 @@ def main():
         apply_sql(None, "ddl/01_dataset.sql", project, dataset, location, DRY_RUN)
         apply_sql(None, "ddl/02_tables.sql", project, dataset, location, DRY_RUN)
 
-        load_dataframe(None, sales_ok, f"{project}.{dataset}.stg_sales", DRY_RUN)
-        load_dataframe(None, fin_ok, f"{project}.{dataset}.stg_financial", DRY_RUN)
-        load_dataframe(None, att_ok, f"{project}.{dataset}.stg_attendance", DRY_RUN)
+        log("INFO", "merge_prepared", rows={
+            "sales": len(sales_ok),
+            "financial": len(fin_ok),
+            "attendance": len(att_ok)
+        })
 
         apply_sql(None, "ddl/03_merges.sql", project, dataset, location, DRY_RUN)
 
