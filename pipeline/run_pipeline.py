@@ -3,10 +3,9 @@ import json
 import os
 import pandas as pd
 import sys
+from datetime import datetime, timezone
 
-from pipeline.log import log
 from pipeline.bq import apply_sql
-
 from pipeline.transform import load_fx_rates, convert_to_usd
 from pipeline.validate import (
     validate_sales,
@@ -16,54 +15,93 @@ from pipeline.validate import (
 
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
+def log(level, event, **details):
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "level": level,
+        "event": event,
+        **details
+    }
+    output = json.dumps(record)
+    if level == "ERROR":
+        print(output, file=sys.stderr)
+    else:
+        print(output)
+
+def cleanup_csv_files():
+    files = [
+        "sales_dataset_3m.csv",
+        "financial_dataset_3m.csv",
+        "attendance_dataset_3m.csv"
+    ]
+    for f in files:
+        if os.path.exists(f):
+            os.remove(f)
+            log("INFO", "old_csv_deleted", file=f)
+
 
 def run_script(path):
-    log("INFO", "script_start", script=path)
-    subprocess.run([sys.executable, path], check=True)
-    log("INFO", "script_complete", script=path)
+    try:
+        log("INFO", "script_start", script=path)
+        subprocess.run([sys.executable, path], check=True)
+        log("INFO", "script_complete", script=path)
+    except subprocess.CalledProcessError as e:
+        log("ERROR", "script_failed", script=path, error=str(e))
+        raise SystemExit(1)
 
 
 def main():
     report = {}
 
     try:
-        # 1. Run provided scripts
+
+        cleanup_csv_files()
+
         run_script("scripts/sales_dataset_3m.py")
         run_script("scripts/financial_data.py")
         run_script("scripts/attendance_dataset_3m.py")
 
-        # 2. Load FX rates
         fx = load_fx_rates()
+        if not fx:
+            raise ValueError("FX rates could not be loaded")
 
-        # 3. Read generated CSVs
         sales = pd.read_csv("sales_dataset_3m.csv")
         financial = pd.read_csv("financial_dataset_3m.csv")
         attendance = pd.read_csv("attendance_dataset_3m.csv")
 
-        # 4. Validate
+        sales["unit_price_usd"] = sales.apply(
+            lambda r: convert_to_usd(r["UnitPrice"], r["Currency"], fx), axis=1
+        )
+        sales["total_sales_usd"] = sales.apply(
+            lambda r: convert_to_usd(r["TotalSales"], r["Currency"], fx), axis=1
+        )
+
+        financial["revenue_usd"] = financial.apply(
+            lambda r: convert_to_usd(r["Revenue"], r["Currency"], fx), axis=1
+        )
+        financial["expense_usd"] = financial.apply(
+            lambda r: convert_to_usd(r["Expense"], r["Currency"], fx), axis=1
+        )
+        financial["profit_usd"] = financial.apply(
+            lambda r: convert_to_usd(r["Profit"], r["Currency"], fx), axis=1
+        )
+
         sales_ok, sales_rej = validate_sales(sales, fx)
         fin_ok, fin_rej = validate_financial(financial, fx)
         att_ok, att_rej = validate_attendance(attendance)
 
-        # 5. Transform monetary fields → USD
-        sales_ok["unit_price_usd"] = sales_ok.apply(
-            lambda r: convert_to_usd(r["UnitPrice"], r["Currency"], fx), axis=1
-        )
-        sales_ok["total_sales_usd"] = sales_ok.apply(
-            lambda r: convert_to_usd(r["TotalSales"], r["Currency"], fx), axis=1
-        )
+        if sales_ok.empty:
+            raise ValueError("All sales records rejected during validation")
+        if fin_ok.empty:
+            raise ValueError("All financial records rejected during validation")
+        if att_ok.empty:
+            raise ValueError("All attendance records rejected during validation")
 
-        fin_ok["revenue_usd"] = fin_ok.apply(
-            lambda r: convert_to_usd(r["Revenue"], r["Currency"], fx), axis=1
-        )
-        fin_ok["expense_usd"] = fin_ok.apply(
-            lambda r: convert_to_usd(r["Expense"], r["Currency"], fx), axis=1
-        )
-        fin_ok["profit_usd"] = fin_ok.apply(
-            lambda r: convert_to_usd(r["Profit"], r["Currency"], fx), axis=1
-        )
+        load_time = datetime.now(timezone.utc)
+        sales_ok["load_ts"] = load_time
+        fin_ok["load_ts"] = load_time
+        att_ok["load_ts"] = load_time
 
-        # 6. Summary report
         report["sales"] = {
             "rows_read": len(sales),
             "rows_loaded": len(sales_ok),
@@ -84,14 +122,22 @@ def main():
             "rows_rejected": len(att_rej)
         }
 
-        # 7. Write report
         os.makedirs("reports", exist_ok=True)
         with open("reports/summary.json", "w") as f:
             json.dump(report, f, indent=2)
 
         log("INFO", "pipeline_completed", report="reports/summary.json")
 
-        # 8. BigQuery (DRY-RUN supported)
+
+        print("\n=== SALES (first 100 rows) ===")
+        print(sales_ok.head(100))
+
+        print("\n=== FINANCIAL (first 100 rows) ===")
+        print(fin_ok.head(100))
+
+        print("\n=== ATTENDANCE (first 100 rows) ===")
+        print(att_ok.head(100))
+
         project = os.getenv("GCP_PROJECT", "demo_project")
         dataset = os.getenv("BQ_DATASET", "demo_dataset")
         location = os.getenv("BQ_LOCATION", "US")
@@ -101,13 +147,6 @@ def main():
 
         apply_sql(None, "ddl/01_dataset.sql", project, dataset, location, DRY_RUN)
         apply_sql(None, "ddl/02_tables.sql", project, dataset, location, DRY_RUN)
-
-        log("INFO", "merge_prepared", rows={
-            "sales": len(sales_ok),
-            "financial": len(fin_ok),
-            "attendance": len(att_ok)
-        })
-
         apply_sql(None, "ddl/03_merges.sql", project, dataset, location, DRY_RUN)
 
     except Exception as e:

@@ -1,17 +1,17 @@
 {
   "sales": {
     "rows_read": 3000000,
-    "rows_loaded": 2084673,
-    "rows_rejected": 915327,
-    "usd_min": 0.72,
-    "usd_max": 317397.13
+    "rows_loaded": 3000000,
+    "rows_rejected": 0,
+    "usd_min": 0.11,
+    "usd_max": 317478.41
   },
   "financial": {
     "rows_read": 3000000,
-    "rows_loaded": 2083120,
-    "rows_rejected": 916880,
-    "usd_min": 6.81,
-    "usd_max": 126999.89
+    "rows_loaded": 3000000,
+    "rows_rejected": 0,
+    "usd_min": 1.1,
+    "usd_max": 126999.83
   },
   "attendance": {
     "rows_read": 3000000,
